@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NCU 中大羽球場空場查詢</title>
+  <meta name="description" content="中央大學羽球館空場查詢，一覽主館 5 個場地（01–04、06）的可用時段，免登入查看。">
+  <meta property="og:title" content="NCU 中大羽球場空場查詢">
+  <meta property="og:description" content="免登入查看中大羽球館空場狀態，格狀視圖一目了然。">
+  <meta property="og:url" content="">
+  <meta property="og:image" content="./preview.jpg">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏸</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏸</text></svg>">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FFKDXMCCFT"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-FFKDXMCCFT');
+  </script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+
+    .date-tab { transition: all .15s; white-space: nowrap; }
+    .date-tab.active {
+      background: #1d4ed8; color: #fff;
+      box-shadow: 0 2px 10px rgba(29,78,216,.4);
+    }
+
+    #grid-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    #grid-table { border-collapse: separate; border-spacing: 0; }
+
+    .col-court {
+      position: sticky; left: 0; z-index: 5;
+      background: #fff; min-width: 200px; max-width: 230px;
+    }
+
+    .col-time {
+      min-width: 90px; text-align: center;
+      padding: 14px 8px; font-size: .9rem; font-weight: 600;
+      color: #64748b;
+    }
+
+    .cell {
+      text-align: center; padding: 14px 8px;
+      font-size: .95rem; font-weight: 700;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .cell.avail { background: #dcfce7; color: #16a34a; }
+    .cell.booked { color: #d1d5db; }
+
+    .legend { display:inline-flex; align-items:center; gap:6px; font-size:.9rem; color:#64748b; }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .skeleton { animation: pulse 1.5s ease-in-out infinite; background:#e2e8f0; border-radius:6px; }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+<!-- ══════════════  HEADER  ══════════════ -->
+<header class="bg-gradient-to-r from-blue-900 to-blue-600 text-white px-6 py-6 shadow-xl">
+  <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight">🏸 NCU 中大羽球場空場查詢</h1>
+      <p id="lastUpdate" class="text-blue-200 text-sm mt-1">資料載入中…</p>
+      <p id="dataRange"  class="text-blue-200 text-sm">—</p>
+    </div>
+    <a href="https://17fit.com/service-flow-sp"
+       target="_blank" rel="noopener noreferrer"
+       class="flex items-center gap-2 bg-white text-blue-700 hover:bg-blue-50
+              px-4 py-2 rounded-xl text-sm font-semibold shadow-md transition">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+           stroke-width="2" stroke="currentColor" class="w-4 h-4">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/>
+      </svg>
+      前往預約
+    </a>
+  </div>
+</header>
+
+<!-- ══════════════  MAIN  ══════════════ -->
+<main class="max-w-7xl mx-auto px-4 py-5 space-y-5">
+
+  <!-- Date tabs -->
+  <div id="dateTabs" class="flex gap-2.5 overflow-x-auto pb-1">
+    <div class="skeleton w-20 h-14 rounded-xl flex-shrink-0"></div>
+    <div class="skeleton w-20 h-14 rounded-xl flex-shrink-0"></div>
+    <div class="skeleton w-20 h-14 rounded-xl flex-shrink-0"></div>
+  </div>
+
+  <!-- Stats bar -->
+  <div id="statsBar"
+       class="bg-white rounded-2xl shadow-sm px-7 py-5 flex flex-wrap gap-6 items-center text-lg">
+    <span class="text-gray-400 italic">載入中…</span>
+  </div>
+
+  <!-- Grid card -->
+  <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+    <div class="flex items-center gap-5 px-5 pt-4 pb-3 border-b border-gray-100">
+      <span class="legend"><span class="w-4 h-4 rounded bg-green-200 inline-block"></span>空場可預約</span>
+      <span class="legend"><span class="w-4 h-4 rounded bg-gray-200 inline-block"></span>已滿／未開放</span>
+    </div>
+
+    <div id="grid-wrap">
+      <div id="grid-loading" class="p-10 text-center text-gray-400">載入資料中…</div>
+      <table id="grid-table" class="hidden w-full">
+        <thead id="grid-head"></thead>
+        <tbody id="grid-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<!-- ══════════════  FOOTER  ══════════════ -->
+<footer class="text-center py-8 text-gray-400 text-sm">
+  <p>&copy; 2026 NCU 中大羽球場空場查詢</p>
+</footer>
+
+<!-- ══════════════  SCRIPT  ══════════════ -->
+<script>
+const WEEKDAY_ZH = { Mon:'週一', Tue:'週二', Wed:'週三', Thu:'週四', Fri:'週五', Sat:'週六', Sun:'週日' };
+
+let allData = [];
+let currentDayIdx = 0;
+
+window.addEventListener('load', async () => {
+  try {
+    const res = await fetch(`./slots.json?t=${Date.now()}`, { cache: 'no-cache' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    allData = json.data;
+    document.getElementById('lastUpdate').textContent = `資料最後更新：${json.updated_at}`;
+    if (allData.length) {
+      document.getElementById('dataRange').textContent =
+        `資料範圍：${allData[0].date} ～ ${allData[allData.length-1].date}`;
+    }
+    renderDateTabs();
+    const todayFmt = (() => {
+      const d = new Date();
+      return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+    })();
+    let startIdx = allData.findIndex(d => d.date === todayFmt);
+    if (startIdx < 0) startIdx = 0;
+    const firstAvail = allData.findIndex((d, i) =>
+      i >= startIdx && d.courts.some(c => c.available_slots.length > 0)
+    );
+    selectDay(firstAvail >= 0 ? firstAvail : startIdx);
+  } catch (e) {
+    document.getElementById('grid-loading').textContent = '⚠️ 資料載入失敗，請重新整理頁面。';
+    console.error(e);
+  }
+});
+
+function renderDateTabs() {
+  const wrap = document.getElementById('dateTabs');
+  wrap.innerHTML = '';
+  allData.forEach((day, i) => {
+    const wz = WEEKDAY_ZH[day.weekday] ?? day.weekday;
+    const isWeekend = day.weekday === 'Sat' || day.weekday === 'Sun';
+    const btn = document.createElement('button');
+    btn.className = 'date-tab flex-shrink-0 flex flex-col items-center px-4 py-2 rounded-xl ' +
+      'border text-sm font-medium focus:outline-none ' +
+      (isWeekend ? 'border-rose-200 text-rose-600' : 'border-gray-200 text-gray-600');
+    btn.innerHTML =
+      `<span class="text-xs ${isWeekend ? 'text-rose-400' : 'text-gray-400'}">${wz}</span>` +
+      `<span class="text-base font-bold">${day.date.slice(5)}</span>`;
+    btn.onclick = () => selectDay(i);
+    btn.id = `tab-${i}`;
+    wrap.appendChild(btn);
+  });
+}
+
+function selectDay(idx) {
+  if (idx < 0 || idx >= allData.length) return;
+  const old = document.getElementById(`tab-${currentDayIdx}`);
+  if (old) old.classList.remove('active');
+  currentDayIdx = idx;
+  const cur = document.getElementById(`tab-${currentDayIdx}`);
+  if (cur) {
+    cur.classList.add('active');
+    cur.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
+  renderGrid();
+  renderStats();
+}
+
+function renderStats() {
+  const day = allData[currentDayIdx];
+  const availCourts = day.courts.filter(c => c.available_slots.length > 0);
+  const totalSlots = availCourts.reduce((s, c) => s + c.available_slots.length, 0);
+  document.getElementById('statsBar').innerHTML =
+    `<span class="text-gray-700 font-semibold">共 <span class="text-green-600 text-2xl font-bold">${totalSlots}</span> 個可預約時段</span>` +
+    `<span class="text-gray-300 text-xl">|</span>` +
+    `<span class="text-gray-600"><b class="text-gray-800 text-2xl">${availCourts.length}</b> / 5 場有空</span>`;
+}
+
+function renderGrid() {
+  const day = allData[currentDayIdx];
+  const timesSet = new Set();
+  day.courts.forEach(c => c.available_slots.forEach(t => timesSet.add(t)));
+  const times = Array.from(timesSet).sort();
+  const lookup = {};
+  day.courts.forEach(c => { lookup[c.id] = new Set(c.available_slots); });
+
+  const thead = document.getElementById('grid-head');
+  thead.innerHTML = '';
+  const trHead = document.createElement('tr');
+
+  const thCorner = document.createElement('th');
+  thCorner.className = 'col-court px-5 py-4 text-left text-sm font-semibold text-gray-500 bg-white border-b border-gray-100';
+  thCorner.textContent = '場地';
+  trHead.appendChild(thCorner);
+
+  times.forEach(t => {
+    const th = document.createElement('th');
+    th.className = 'col-time border-b border-gray-100';
+    th.textContent = t;
+    trHead.appendChild(th);
+  });
+  thead.appendChild(trHead);
+
+  const tbody = document.getElementById('grid-body');
+  tbody.innerHTML = '';
+
+  day.courts.forEach(court => {
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-slate-50 transition-colors';
+
+    const tdName = document.createElement('td');
+    tdName.className = 'col-court px-5 py-4 text-sm text-gray-700 font-semibold border-b border-gray-50';
+    tdName.textContent = court.name;
+    tr.appendChild(tdName);
+
+    times.forEach(t => {
+      const td = document.createElement('td');
+      const isAvail = lookup[court.id]?.has(t);
+      td.className = 'cell ' + (isAvail ? 'avail' : 'booked');
+      td.textContent = isAvail ? '✓' : '·';
+      tr.appendChild(td);
+    });
+
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('grid-loading').classList.add('hidden');
+  document.getElementById('grid-table').classList.remove('hidden');
+}
+</script>
+
+</body>
+</html>
