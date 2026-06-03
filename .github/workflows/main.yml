@@ -2,7 +2,7 @@ name: Update data json
 
 on:
   schedule:
-    - cron: '5 * * * *'  # 每小時第 5 分鐘執行一次
+    - cron: '37 * * * *'  # 每小時第 5 分鐘執行一次
       timezone: "Asia/Taipei"
   workflow_dispatch:
 
