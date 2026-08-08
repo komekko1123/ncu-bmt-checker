@@ -1,37 +1,6 @@
 {
-  "updated_at": "2026-08-07 23:59:44",
+  "updated_at": "2026-08-08 01:59:07",
   "data": [
-    {
-      "date": "2026/08/07",
-      "weekday": "Fri",
-      "courts": [
-        {
-          "name": "羽球場01 近講臺右",
-          "id": "50116",
-          "available_slots": []
-        },
-        {
-          "name": "羽球場02 近講臺中",
-          "id": "50117",
-          "available_slots": []
-        },
-        {
-          "name": "羽球場03 近講臺左",
-          "id": "50118",
-          "available_slots": []
-        },
-        {
-          "name": "羽球場04 近門口右",
-          "id": "50119",
-          "available_slots": []
-        },
-        {
-          "name": "羽球場06 近門口左",
-          "id": "50121",
-          "available_slots": []
-        }
-      ]
-    },
     {
       "date": "2026/08/08",
       "weekday": "Sat",
@@ -107,6 +76,8 @@
           "name": "羽球場01 近講臺右",
           "id": "50116",
           "available_slots": [
+            "14:00",
+            "15:00",
             "16:00"
           ]
         },
@@ -183,6 +154,8 @@
           "name": "羽球場04 近門口右",
           "id": "50119",
           "available_slots": [
+            "14:00",
+            "15:00",
             "16:00"
           ]
         },
@@ -628,6 +601,37 @@
     {
       "date": "2026/08/24",
       "weekday": "Mon",
+      "courts": [
+        {
+          "name": "羽球場01 近講臺右",
+          "id": "50116",
+          "available_slots": []
+        },
+        {
+          "name": "羽球場02 近講臺中",
+          "id": "50117",
+          "available_slots": []
+        },
+        {
+          "name": "羽球場03 近講臺左",
+          "id": "50118",
+          "available_slots": []
+        },
+        {
+          "name": "羽球場04 近門口右",
+          "id": "50119",
+          "available_slots": []
+        },
+        {
+          "name": "羽球場06 近門口左",
+          "id": "50121",
+          "available_slots": []
+        }
+      ]
+    },
+    {
+      "date": "2026/08/25",
+      "weekday": "Tue",
       "courts": [
         {
           "name": "羽球場01 近講臺右",
