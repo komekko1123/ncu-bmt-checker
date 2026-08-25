@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-08-25 12:37:30",
+  "updated_at": "2026-08-25 13:32:45",
   "data": [
     {
       "date": "2026/08/25",
@@ -18,23 +18,17 @@
         {
           "name": "羽球場03 近講臺左",
           "id": "50118",
-          "available_slots": [
-            "21:00"
-          ]
+          "available_slots": []
         },
         {
           "name": "羽球場04 近門口右",
           "id": "50119",
-          "available_slots": [
-            "21:00"
-          ]
+          "available_slots": []
         },
         {
           "name": "羽球場06 近門口左",
           "id": "50121",
-          "available_slots": [
-            "21:00"
-          ]
+          "available_slots": []
         }
       ]
     },
