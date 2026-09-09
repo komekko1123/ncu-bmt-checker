@@ -4,9 +4,6 @@ __pycache__/
 *.pyo
 backup/
 
-# worker / vercel 本機設定與 secrets
-worker/.dev.vars
-worker/node_modules/
-worker/.wrangler/
+# vercel 本機設定與 secrets
 vercel/.vercel
 vercel/.env*

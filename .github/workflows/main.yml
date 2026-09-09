@@ -6,8 +6,8 @@ on:
     # 實測 199 次更新的間隔中位數是 53 分、平均 120 分，落在 15 分內的只有 0.5%
     # —— 設每 10 分鐘完全沒有意義，只是把 repo 灌成 1500+ 個 commit。
     #
-    # 網站的即時性交給 Cloudflare Worker（見 worker/），slots.json 只負責
-    # 開頁面的第一畫面與 Worker 失效時的備援，每小時一次綽綽有餘。
+    # 網站的即時性交給 Vercel（見 vercel/），slots.json 只負責
+    # 開頁面的第一畫面與 API 失效時的備援，每小時一次綽綽有餘。
     # 避開 :00，那是全球排程最擁塞的時間點。
     #
     # 注意：原本這裡有一行 timezone: "Asia/Taipei" —— GitHub Actions 不支援
