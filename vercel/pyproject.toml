@@ -1,0 +1,11 @@
+[project]
+name = "ncu-bmt-api"
+version = "0.1.0"
+requires-python = "~=3.12.0"
+dependencies = ["requests"]
+classifiers = ["Private :: Do Not Upload"]
+
+# Vercel 新版 Python runtime 需要明確指定 entrypoint，
+# 不再是 api/ 底下每個檔案自成一個路由。
+[tool.vercel]
+entrypoint = "api.slots:handler"

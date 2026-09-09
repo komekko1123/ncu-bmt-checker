@@ -1,10 +1,12 @@
-
 .env
-
-
 __pycache__/
 *.pyc
 *.pyo
-
-
 backup/
+
+# worker / vercel 本機設定與 secrets
+worker/.dev.vars
+worker/node_modules/
+worker/.wrangler/
+vercel/.vercel
+vercel/.env*

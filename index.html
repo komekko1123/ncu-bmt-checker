@@ -66,6 +66,20 @@
       <p id="lastUpdate" class="text-blue-200 text-sm mt-1">資料載入中…</p>
       <p id="dataRange"  class="text-blue-200 text-sm">—</p>
     </div>
+    <div class="flex items-center gap-3">
+    <span id="liveWrap" class="hidden">
+      <button onclick="liveRefresh(currentDayIdx, { force: true })"
+              title="重新即時查詢這一天"
+              class="flex items-center gap-2 bg-blue-500/40 hover:bg-blue-500/60 text-white
+                     px-4 py-2 rounded-xl text-sm font-semibold shadow-md transition">
+        <svg id="liveBtn" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+             stroke-width="2" stroke="currentColor" class="w-4 h-4">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M16.023 9.348h4.992V4.356m-4.992 4.992l3.181-3.183a8.25 8.25 0 00-13.803 3.7M4.031 9.865v4.992h4.992m-4.993 0l3.182 3.182a8.25 8.25 0 0013.803-3.7"/>
+        </svg>
+        重新整理
+      </button>
+    </span>
     <a href="https://17fit.com/service-flow-sp"
        target="_blank" rel="noopener noreferrer"
        class="flex items-center gap-2 bg-white text-blue-700 hover:bg-blue-50
@@ -77,6 +91,7 @@
       </svg>
       前往預約
     </a>
+    </div>
   </div>
 </header>
 
@@ -123,35 +138,114 @@
 <script>
 const WEEKDAY_ZH = { Mon:'週一', Tue:'週二', Wed:'週三', Thu:'週四', Fri:'週五', Sat:'週六', Sun:'週日' };
 
+// ── 即時查詢設定 ─────────────────────────────────────────────
+// 部署 vercel/ 之後把網址填進來，例如 'https://ncu-bmt-checker.vercel.app'
+// 留空 = 停用即時查詢，退回原本純讀 slots.json 的行為。
+//
+// 註：原本打算用 Cloudflare Workers，但實測 17fit 封鎖 Cloudflare 出口網段
+// （所有 17fit 主機名一律逾時，example.com/google.com 正常），故改用 Vercel。
+const API_URL = 'https://ncu-bmt-checker.vercel.app';
+const DAYS = 18;
+const COURT_LIST = [
+  { id:'50116', name:'羽球場01 近講臺右' },
+  { id:'50117', name:'羽球場02 近講臺中' },
+  { id:'50118', name:'羽球場03 近講臺左' },
+  { id:'50119', name:'羽球場04 近門口右' },
+  { id:'50121', name:'羽球場06 近門口左' },
+];
+
 let allData = [];
 let currentDayIdx = 0;
+let liveToken = 0;   // 防止慢的舊請求蓋掉新的（切分頁切很快時會發生）
+
+const twToday = () => new Date(Date.now() + 8*3600*1000);
+const fmtDate = (d) =>
+  `${d.getUTCFullYear()}/${String(d.getUTCMonth()+1).padStart(2,'0')}/${String(d.getUTCDate()).padStart(2,'0')}`;
+
+/** slots.json 掛掉時（或還沒產生時）用台灣時間自行湊出日期骨架，
+    內容全空，接著靠 Worker 逐日補上 —— 這樣網站可以完全不依賴 slots.json。 */
+function skeletonDays(n) {
+  const base = twToday();
+  const names = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  return Array.from({length:n}, (_, i) => {
+    const d = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), base.getUTCDate()+i));
+    return {
+      date: fmtDate(d), weekday: names[d.getUTCDay()], stale: true,
+      courts: COURT_LIST.map(c => ({ ...c, available_slots: [] })),
+    };
+  });
+}
+
+function setStatus(text, tone = 'text-blue-200') {
+  const el = document.getElementById('lastUpdate');
+  el.className = `${tone} text-sm mt-1`;
+  el.textContent = text;
+}
+
+/** 向 Worker 要單一日期的即時資料，成功就換掉該天並重繪。 */
+async function liveRefresh(idx, { force = false } = {}) {
+  if (!API_URL) return;
+  const day = allData[idx];
+  if (!day) return;
+  const token = ++liveToken;
+
+  document.getElementById('liveBtn')?.classList.add('animate-spin');
+  setStatus('即時查詢中…');
+  try {
+    const url = `${API_URL}/api/slots?date=${encodeURIComponent(day.date)}` +
+                (force ? `&_=${Date.now()}` : '');
+    const res = await fetch(url, { cache: 'no-store' });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || ('HTTP ' + res.status));
+    if (token !== liveToken) return;            // 已經有更新的請求了，丟掉這筆
+
+    allData[idx] = { ...day, courts: json.courts, stale: false };
+    if (idx === currentDayIdx) { renderGrid(); renderStats(); }
+    setStatus(`即時資料 ${json.fetched_at}${json.cached ? '（快取）' : ''}`);
+  } catch (e) {
+    if (token !== liveToken) return;
+    setStatus(`即時查詢失敗，顯示的是排程快照：${e.message}`, 'text-amber-200');
+    console.error(e);
+  } finally {
+    document.getElementById('liveBtn')?.classList.remove('animate-spin');
+  }
+}
 
 window.addEventListener('load', async () => {
+  let loadedFromJson = false;
   try {
     const res = await fetch(`./slots.json?t=${Date.now()}`, { cache: 'no-cache' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json();
     allData = json.data;
-    document.getElementById('lastUpdate').textContent = `資料最後更新：${json.updated_at}`;
-    if (allData.length) {
-      document.getElementById('dataRange').textContent =
-        `資料範圍：${allData[0].date} ～ ${allData[allData.length-1].date}`;
-    }
-    renderDateTabs();
-    const todayFmt = (() => {
-      const d = new Date();
-      return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
-    })();
-    let startIdx = allData.findIndex(d => d.date === todayFmt);
-    if (startIdx < 0) startIdx = 0;
-    const firstAvail = allData.findIndex((d, i) =>
-      i >= startIdx && d.courts.some(c => c.available_slots.length > 0)
-    );
-    selectDay(firstAvail >= 0 ? firstAvail : startIdx);
+    setStatus(`排程快照：${json.updated_at}`);
+    loadedFromJson = true;
   } catch (e) {
-    document.getElementById('grid-loading').textContent = '⚠️ 資料載入失敗，請重新整理頁面。';
-    console.error(e);
+    console.error('slots.json 載入失敗', e);
+    if (!API_URL) {
+      document.getElementById('grid-loading').textContent = '⚠️ 資料載入失敗，請重新整理頁面。';
+      return;
+    }
+    // 有 Worker 就不需要 slots.json，直接用空骨架開場
+    allData = skeletonDays(DAYS);
+    setStatus('排程快照無法載入，改用即時查詢');
   }
+
+  if (!allData.length) allData = skeletonDays(DAYS);
+  if (API_URL) document.getElementById('liveWrap').classList.remove('hidden');
+
+  document.getElementById('dataRange').textContent =
+    `資料範圍：${allData[0].date} ～ ${allData[allData.length-1].date}`;
+  renderDateTabs();
+
+  const todayFmt = fmtDate(twToday());
+  let startIdx = allData.findIndex(d => d.date === todayFmt);
+  if (startIdx < 0) startIdx = 0;
+  // 有快照才挑「第一個有空場的日子」；純即時模式此時全是空的，直接停在今天
+  const firstAvail = loadedFromJson
+    ? allData.findIndex((d, i) => i >= startIdx && d.courts.some(c => c.available_slots.length > 0))
+    : -1;
+  selectDay(firstAvail >= 0 ? firstAvail : startIdx);
 });
 
 function renderDateTabs() {
@@ -185,6 +279,7 @@ function selectDay(idx) {
   }
   renderGrid();
   renderStats();
+  liveRefresh(idx);   // 先秒開快照，再背景換成即時資料
 }
 
 function renderStats() {

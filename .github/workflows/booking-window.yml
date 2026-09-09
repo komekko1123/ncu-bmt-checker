@@ -1,0 +1,75 @@
+name: Booking Window Sniper
+
+# NCU 開放預約的兩個關鍵時刻（台灣時間 17:00）：
+#   - 每月 15 日 17:00 → 開放當月 16 日～月底
+#   - 每月最後工作日 17:00 → 開放次月 1～15 日
+#   （遇假日提前至前一個工作日）
+#
+# GitHub Actions 的 cron 只是「最早不早於」，實際發車可能延遲 5~30 分鐘，
+# 尖峰時段甚至整批被丟棄，所以不能直接排 17:00。
+# 做法：提早 45 分鐘發車，job 起來後自己在 runner 上睡到 16:59:55，
+# 再從 17:00 起持續輪詢到 17:10，抓到新開放日期就收工。
+
+on:
+  schedule:
+    # UTC 08:15 = 台灣 16:15（提前 45 分鐘，吸收 cron 漂移）
+    # UTC 08:35 = 台灣 16:35（備援班次，萬一第一班被丟掉）
+    # 日期涵蓋 15 日提前到 13/14 的情況，以及月底 25~31 的最後工作日。
+    # 實際是不是開放日，交給 ONLY_ON_OPEN_DAY 在 job 內判斷。
+    - cron: '15,35 8 13,14,15,25,26,27,28,29,30,31 * *'
+  workflow_dispatch:
+    inputs:
+      target_time:
+        description: '手動測試用的目標台灣時間 (HH:MM:SS)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: booking-window
+  cancel-in-progress: false
+
+jobs:
+  snipe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90     # 最多 45 分等待 + 10 分輪詢 + 抓取時間
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Report scheduling drift
+        run: |
+          echo "排定發車：${{ github.event.schedule || 'manual' }} (UTC)"
+          echo "實際起跑：$(TZ=Asia/Taipei date '+%Y-%m-%d %H:%M:%S') (台灣時間)"
+
+      - name: Wait for 17:00 and fetch
+        env:
+          FIT17_ACCOUNT: ${{ secrets.FIT17_ACCOUNT }}
+          FIT17_PASSWORD: ${{ secrets.FIT17_PASSWORD }}
+          ONLY_ON_OPEN_DAY: ${{ github.event_name == 'schedule' && '1' || '0' }}
+          TARGET_TIME: ${{ github.event.inputs.target_time || '16:59:55' }}
+          POLL_UNTIL: '17:10'
+          POLL_INTERVAL: '20'
+        run: python fetch_courts.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add slots.json
+          git diff --staged --quiet && echo "無變動" && exit 0
+          git commit -m "chore: booking window opened, update court data [skip ci]"
+          git pull --rebase --autostash origin ${GITHUB_REF_NAME}
+          git push
