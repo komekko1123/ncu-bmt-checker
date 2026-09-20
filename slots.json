@@ -1,37 +1,6 @@
 {
-  "updated_at": "2026-09-20 19:31:43 (UTC+8)",
+  "updated_at": "2026-09-21 00:06:41 (UTC+8)",
   "data": [
-    {
-      "date": "2026/09/20",
-      "weekday": "Sun",
-      "courts": [
-        {
-          "name": "羽球場01 近講臺右",
-          "id": "50116",
-          "available_slots": []
-        },
-        {
-          "name": "羽球場02 近講臺中",
-          "id": "50117",
-          "available_slots": []
-        },
-        {
-          "name": "羽球場03 近講臺左",
-          "id": "50118",
-          "available_slots": []
-        },
-        {
-          "name": "羽球場04 近門口右",
-          "id": "50119",
-          "available_slots": []
-        },
-        {
-          "name": "羽球場06 近門口左",
-          "id": "50121",
-          "available_slots": []
-        }
-      ]
-    },
     {
       "date": "2026/09/21",
       "weekday": "Mon",
@@ -65,6 +34,7 @@
           "name": "羽球場04 近門口右",
           "id": "50119",
           "available_slots": [
+            "10:00",
             "11:00",
             "15:00"
           ]
@@ -99,13 +69,16 @@
           "name": "羽球場03 近講臺左",
           "id": "50118",
           "available_slots": [
+            "11:00",
             "12:00"
           ]
         },
         {
           "name": "羽球場04 近門口右",
           "id": "50119",
-          "available_slots": []
+          "available_slots": [
+            "11:00"
+          ]
         },
         {
           "name": "羽球場06 近門口左",
@@ -162,7 +135,9 @@
         {
           "name": "羽球場03 近講臺左",
           "id": "50118",
-          "available_slots": []
+          "available_slots": [
+            "17:00"
+          ]
         },
         {
           "name": "羽球場04 近門口右",
@@ -563,6 +538,37 @@
     {
       "date": "2026/10/07",
       "weekday": "Wed",
+      "courts": [
+        {
+          "name": "羽球場01 近講臺右",
+          "id": "50116",
+          "available_slots": []
+        },
+        {
+          "name": "羽球場02 近講臺中",
+          "id": "50117",
+          "available_slots": []
+        },
+        {
+          "name": "羽球場03 近講臺左",
+          "id": "50118",
+          "available_slots": []
+        },
+        {
+          "name": "羽球場04 近門口右",
+          "id": "50119",
+          "available_slots": []
+        },
+        {
+          "name": "羽球場06 近門口左",
+          "id": "50121",
+          "available_slots": []
+        }
+      ]
+    },
+    {
+      "date": "2026/10/08",
+      "weekday": "Thu",
       "courts": [
         {
           "name": "羽球場01 近講臺右",
